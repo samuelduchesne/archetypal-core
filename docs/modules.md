@@ -1,0 +1,1 @@
+::: archetypal_core.foo
