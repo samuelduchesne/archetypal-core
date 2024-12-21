@@ -4,7 +4,8 @@ import re
 from typing import Annotated, Any, Literal, Union
 
 from pydantic import BaseModel, Field, StringConstraints, create_model
-from pydantic_core import SchemaError
+
+JSON_SCHEMA_TYPE = Literal["string", "number", "integer", "object", "array", "boolean", "null"]
 
 
 def create_pydantic_model_from_schema(schema: dict[str, Any], model_name: str = "IDF") -> type[BaseModel]:
@@ -52,7 +53,7 @@ def create_pydantic_model_from_schema(schema: dict[str, Any], model_name: str = 
 
 def create_pydantic_model_for_pattern_properties(
     pattern_properties: dict[str, Any], model_name: str
-) -> tuple[str, type]:
+) -> tuple[str, type[BaseModel]]:
     """Creates a Pydantic model for patternProperties.
 
     Args:
@@ -61,12 +62,10 @@ def create_pydantic_model_for_pattern_properties(
     Returns: Pydantic model class.
     """
     for pattern, pattern_schema in pattern_properties.items():
-        try:
-            field_type = get_python_type_from_json_schema(pattern_schema, model_name=model_name)
-        except SchemaError as e:
-            print(f"Error creating model for pattern {pattern}: {e}")
-
+        field_type = get_python_type_from_json_schema(pattern_schema, model_name=model_name)
         return pattern, field_type
+    msg = "No patternProperties found in schema."
+    raise ValueError(msg)
 
 
 def get_python_type_from_json_schema(field_schema: dict[str, Any], model_name: str | None = None) -> Any:
@@ -84,20 +83,21 @@ def get_python_type_from_json_schema(field_schema: dict[str, Any], model_name: s
         return get_python_type_from_any_of(field_schema["anyOf"])
 
     # Default to string if type is not defined
-    json_type = field_schema.get("type", "string")
+    json_type: JSON_SCHEMA_TYPE = field_schema.get("type", "string")
 
     type_mapping = {
         "string": str,
         "number": float,
         "integer": int,
         "boolean": bool,
-        "array": list,
-        "object": dict,
+        "array": list[Any],
+        "object": dict[str, Any],
     }
 
     # Handle enums
     if "enum" in field_schema:
-        return Literal[tuple(type_mapping.get(json_type, str)(v) for v in field_schema["enum"])]
+        enum: list[str | int | float] = field_schema["enum"]
+        return Literal[tuple(type_mapping.get(json_type, str)(v) for v in enum)]  # type: ignore[reportCallIssue]
 
     # Handle nested object schemas
     if json_type == "object" and "properties" in field_schema and model_name:
