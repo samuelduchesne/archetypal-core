@@ -1,20 +1,23 @@
 """Models."""
 
 import re
-from typing import Annotated, Any, Dict, Literal, Type, Union
+from typing import Annotated, Any, Literal, Union
 
 from pydantic import BaseModel, Field, StringConstraints, create_model
 from pydantic_core import SchemaError
 
 
-def create_pydantic_model_from_schema(schema: Dict[str, Any], model_name: str = "IDF") -> Type[BaseModel]:
-    """
-    Dynamically creates a Pydantic model based on a given JSON schema.
+def create_pydantic_model_from_schema(schema: dict[str, Any], model_name: str = "IDF") -> type[BaseModel]:
+    """Dynamically creates a Pydantic model based on a given JSON schema.
+
     Handles patternProperties nested within the properties dictionary.
 
-    :param schema: JSON Schema dictionary.
-    :param model_name: Name of the Pydantic model.
-    :return: Pydantic model class.
+    Args:
+        schema: JSON Schema dictionary.
+        model_name: Name of the Pydantic model.
+
+    Returns:
+        Pydantic model class.
     """
     properties = schema.get("properties", {})
     required_fields = set(schema.get("required", []))
@@ -30,7 +33,7 @@ def create_pydantic_model_from_schema(schema: Dict[str, Any], model_name: str = 
                 pattern_properties, model_name=field_name
             )
             model_fields[field_name] = (
-                Dict[Annotated[str, StringConstraints(pattern=pattern)], nested_model],
+                dict[Annotated[str, StringConstraints(pattern=pattern)], nested_model],
                 None,
             )
         else:
@@ -44,11 +47,11 @@ def create_pydantic_model_from_schema(schema: Dict[str, Any], model_name: str = 
     # rename model_name to make sure it is a valid python attribute name
     model_name = re.sub(r"\W", "_", model_name)
 
-    return create_model(model_name, **model_fields)
+    return create_model(model_name, **model_fields)  # type: ignore[reportUnkownArgumentType]
 
 
 def create_pydantic_model_for_pattern_properties(
-    pattern_properties: Dict[str, Any], model_name: str
+    pattern_properties: dict[str, Any], model_name: str
 ) -> tuple[str, type]:
     """Creates a Pydantic model for patternProperties.
 
@@ -57,7 +60,6 @@ def create_pydantic_model_for_pattern_properties(
         model_name: Name of the Pydantic model.
     Returns: Pydantic model class.
     """
-
     for pattern, pattern_schema in pattern_properties.items():
         try:
             field_type = get_python_type_from_json_schema(pattern_schema, model_name=model_name)
@@ -73,7 +75,8 @@ def get_python_type_from_json_schema(field_schema: dict[str, Any], model_name: s
     Handles nested schemas and enums.
 
     Args:
-        field_schema: Schema for a specific field.
+        field_schema (dict): Schema for a specific field.
+        model_name (optional, str): Name of the Pydantic model.
 
     Return: Python type corresponding to the JSON Schema type.
     """
@@ -120,16 +123,17 @@ def get_python_type_from_json_schema(field_schema: dict[str, Any], model_name: s
     return type_mapping.get(json_type, Any)
 
 
-def get_python_type_from_any_of(any_of_schema: list[dict[str, Any]]) -> Any:
+def get_python_type_from_any_of(any_of_schema: list[dict[str, Any]]):
     """Parses an 'anyOf' schema and generates a Pydantic Union type."""
-    return Union[tuple(get_python_type_from_json_schema(schema) for schema in any_of_schema)]
+    return Union[tuple(get_python_type_from_json_schema(schema) for schema in any_of_schema)]  # noqa: UP007
 
 
 if __name__ == "__main__":
     import json
 
     # Sample JSON Schema
-    json_schema = json.load(open("archetypal_core/schemas/Energy+.schema.epJSON"))
+    with open("archetypal_core/schemas/Energy+.schema.epJSON") as r:
+        json_schema = json.load(r)
 
     # Create a dynamic Pydantic model
     IDF = create_pydantic_model_from_schema(json_schema, model_name="IDF")
