@@ -40,7 +40,10 @@ def create_pydantic_model_from_schema(schema: dict[str, Any], model_name: str = 
         # Check if this field has `patternProperties`
         if "patternProperties" in field_schema:
             pattern, nested_model = create_pydantic_model_for_pattern_properties(field_schema, model_name=field_name)
-            model_fields[field_name] = (dict[Annotated[str, StringConstraints(pattern=pattern)], nested_model], None)
+            model_fields[re.sub(r"\W", "_", field_name)] = (
+                dict[Annotated[str, StringConstraints(pattern=pattern)], nested_model],
+                None,
+            )
         else:
             # Regular field
             field_type = get_python_type_from_json_schema(field_schema)
@@ -48,7 +51,7 @@ def create_pydantic_model_from_schema(schema: dict[str, Any], model_name: str = 
             if field_name not in required_fields:
                 field_default = field_schema.get("default", None)
 
-            model_fields[field_name] = (
+            model_fields[re.sub(r"\W", "_", field_name)] = (
                 field_type,
                 Field(
                     field_default,
@@ -63,8 +66,8 @@ def create_pydantic_model_from_schema(schema: dict[str, Any], model_name: str = 
                 ),
             )
 
-        # rename model_name to make sure it is a valid python attribute name
-        model_name = re.sub(r"\W", "_", model_name)
+    # rename model_name to make sure it is a valid python attribute name
+    model_name = re.sub(r"\W", "_", model_name)
 
     return create_model(model_name, **model_fields, __config__=config, __doc__=doc)  # type: ignore[reportUnkownArgumentType]
 
