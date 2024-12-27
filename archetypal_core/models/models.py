@@ -33,7 +33,11 @@ def create_pydantic_model_from_schema(schema: dict[str, Any], model_name: str = 
 
     # Define fields for the Pydantic model
     model_fields = {}
-    config = ConfigDict(json_schema_extra={"legacy_idd": schema["legacy_idd"]}) if "legacy_idd" in schema else None
+    config = (
+        ConfigDict(title=model_name, json_schema_extra={"legacy_idd": schema["legacy_idd"]})
+        if "legacy_idd" in schema
+        else None
+    )
     doc = schema.get("memo")
 
     for field_name, field_schema in properties.items():
@@ -41,7 +45,9 @@ def create_pydantic_model_from_schema(schema: dict[str, Any], model_name: str = 
         if "patternProperties" in field_schema:
             pattern, nested_model = create_pydantic_model_for_pattern_properties(field_schema, model_name=field_name)
             model_fields[re.sub(r"\W", "_", field_name)] = (
-                dict[Annotated[str, StringConstraints(pattern=pattern)], nested_model],
+                Annotated[
+                    dict[Annotated[str, StringConstraints(pattern=pattern)], nested_model], Field(alias=field_name)
+                ],
                 None,
             )
         else:
@@ -63,6 +69,7 @@ def create_pydantic_model_from_schema(schema: dict[str, Any], model_name: str = 
                     json_schema_extra={
                         "units": field_schema.get("units", "dimensionless"),
                     },
+                    alias=field_name,
                 ),
             )
 
