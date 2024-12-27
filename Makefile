@@ -50,6 +50,29 @@ docs-test: ## Test if documentation can be built without warnings or errors
 docs: ## Build and serve the documentation
 	@poetry run mkdocs serve
 
+.PHONY: generate
+generate:
+	@echo "Running Datamodel Code Generator..."
+	@datamodel-codegen --input archetypal_core/schema.json \
+		--input-file-type jsonschema \
+		--use-non-positive-negative-number-constrained-types \
+		--empty-enum-field-name Empty \
+		--use-annotated \
+		--enum-field-as-literal all \
+		--field-constraints \
+		--use-standard-collections \
+		--use-union-operator \
+		--class-name IDF \
+		--field-extra-keys units legacy_idd \
+		--target-python-version 3.11 \
+		--use-schema-description \
+		--reuse-model \
+		--collapse-root-models \
+		--disable-appending-item-suffix \
+		--output-model-type pydantic_v2.BaseModel \
+		--use-exact-imports \
+		--output ./archetypal_core/automodels.py
+
 .PHONY: help
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
