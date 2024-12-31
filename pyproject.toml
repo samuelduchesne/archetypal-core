@@ -13,7 +13,6 @@ packages = [
 [tool.poetry.dependencies]
 python = ">=3.8,<4.0"
 pydantic = "^2.10.4"
-datamodel-code-generator = "^0.26.4"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.2.0"
@@ -27,6 +26,10 @@ tox = "^4.11.1"
 mkdocs = "^1.4.2"
 mkdocs-material = "^9.2.7"
 mkdocstrings = {extras = ["python"], version = "^0.26.1"}
+
+
+[tool.poetry.group.generate.dependencies]
+datamodel-code-generator = "^0.26.4"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

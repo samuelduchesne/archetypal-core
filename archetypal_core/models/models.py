@@ -1,7 +1,7 @@
 """Models."""
 
+import json
 import re
-from logging import config
 from pathlib import Path
 from typing import Annotated, Any, Literal, Union
 
@@ -85,7 +85,7 @@ def create_pydantic_model_for_pattern_properties(
     """Creates a Pydantic model for patternProperties.
 
     Args:
-        pattern_properties: The patternProperties dictionary from the schema.
+        field_schema: The schema for the field.
         model_name: Name of the Pydantic model.
     Returns: Pydantic model class.
     """
@@ -158,8 +158,6 @@ def get_python_type_from_any_of(any_of_schema: list[dict[str, Any]]):
     """Parses an 'anyOf' schema and generates a Pydantic Union type."""
     return Union[tuple(get_python_type_from_json_schema(schema) for schema in any_of_schema)]  # noqa: UP007
 
-
-import json
 
 cdir = Path(__file__).parent
 
