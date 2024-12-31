@@ -7,6 +7,9 @@ from typing import Annotated, Any, Literal, Union
 
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints, create_model
 
+# Import the Rust module using pyo3
+from archetypal_core.rust.idf_parser import IDF as RustIDF
+
 JSON_SCHEMA_TYPE = Literal["string", "number", "integer", "object", "array", "boolean", "null"]
 
 
@@ -174,3 +177,7 @@ if __name__ == "__main__":
 
     with open("/Applications/EnergyPlus-23-1-0/ExampleFiles/RefBldgMediumOfficeNew2004_Chicago_epJSON.epJSON") as f:
         idf = IDF.model_validate_json(f.read())
+
+    # Use the Rust module for IDF parsing
+    rust_idf = RustIDF("/Applications/EnergyPlus-23-1-0/ExampleFiles/RefBldgMediumOfficeNew2004_Chicago_epJSON.epJSON")
+    print(rust_idf.get_data())
