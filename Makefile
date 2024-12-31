@@ -26,10 +26,13 @@ test: ## Test the code with pytest
 build: clean-build ## Build wheel file using poetry
 	@echo "🚀 Creating wheel file"
 	@poetry build
+	@echo "🚀 Building Rust code"
+	@cd archetypal_core/rust && cargo build --release
 
 .PHONY: clean-build
 clean-build: ## clean build artifacts
 	@rm -rf dist
+	@rm -rf archetypal_core/rust/target
 
 .PHONY: publish
 publish: ## publish a release to pypi.
